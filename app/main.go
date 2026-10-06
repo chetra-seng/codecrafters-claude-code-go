@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
+	"github.com/codecrafters-io/claude-code-starter-go/app/tools"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/shared"
@@ -69,6 +71,35 @@ func main() {
 			},
 		},
 	)
+
+	if len(resp.Choices) > 0 {
+		tool_calls := resp.Choices[0].Message.ToolCalls
+
+		for _, tool := range tool_calls {
+			if tool.Function.Name == "Read" {
+				var params tools.ReadParameters
+				jsonStr := tool.Function.Arguments
+
+				err := json.Unmarshal([]byte(jsonStr), &params)
+
+				if err != nil {
+					panic("Error parse read parameters")
+				}
+
+				content, err := os.ReadFile(params.FilePath)
+
+				if err != nil {
+					fmt.Println("Error reloading file")
+					return
+				}
+
+				fmt.Println(string(content))
+
+			}
+		}
+
+	}
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
