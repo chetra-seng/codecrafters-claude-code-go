@@ -5,3 +5,8 @@ package tools
 type ReadParameters struct {
 	FilePath string `json:"file_path"`
 }
+
+type WriteParameters struct {
+	FilePath string `json:"file_path"`
+	Content  string `json:"content"`
+}

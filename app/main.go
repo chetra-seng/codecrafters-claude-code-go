@@ -72,6 +72,24 @@ func main() {
 							"required": []string{"file_path"},
 						},
 					}),
+					openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+						Name:        "Write",
+						Description: openai.String("Write content to a file"),
+						Parameters: shared.FunctionParameters{
+							"type":     "object",
+							"required": []string{"file_path", "content"},
+							"properties": map[string]any{
+								"file_path": map[string]any{
+									"type":        "string",
+									"description": "The path of the file to write to",
+								},
+								"content": map[string]any{
+									"type":        "string",
+									"description": "The content to write to the file",
+								},
+							},
+						},
+					}),
 				},
 			},
 		)
@@ -104,7 +122,7 @@ func main() {
 				err := json.Unmarshal([]byte(tool.Function.Arguments), &params)
 
 				if err != nil {
-					panic("Tool paramenters parse error")
+					panic("Tool parameters parse error")
 				}
 
 				content, err := os.ReadFile(params.FilePath)
@@ -113,6 +131,22 @@ func main() {
 					result = fmt.Sprintf("error: %v", err)
 				} else {
 					result = string(content)
+				}
+			case "Write":
+				var params tools.WriteParameters
+
+				err := json.Unmarshal([]byte(tool.Function.Arguments), &params)
+
+				if err != nil {
+					panic("Tool parameters parse error")
+				}
+
+				data := []byte(params.Content)
+
+				os.WriteFile(params.FilePath, data, 0644)
+
+				if err != nil {
+					panic("Write file error")
 				}
 
 			default:
