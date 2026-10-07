@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/codecrafters-io/claude-code-starter-go/app/tools"
 	"github.com/openai/openai-go/v3"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+
 	var prompt string
 	flag.StringVar(&prompt, "p", "", "Prompt to send to LLM")
 	flag.Parse()
@@ -90,6 +92,20 @@ func main() {
 							},
 						},
 					}),
+					openai.ChatCompletionFunctionTool(shared.FunctionDefinitionParam{
+						Name:        "Bash",
+						Description: openai.String("Execute a shell command"),
+						Parameters: shared.FunctionParameters{
+							"type":     "object",
+							"required": []string{"command"},
+							"properties": map[string]any{
+								"command": map[string]any{
+									"type":        "string",
+									"description": "The command to execute",
+								},
+							},
+						},
+					}),
 				},
 			},
 		)
@@ -148,6 +164,25 @@ func main() {
 				if err != nil {
 					panic("Write file error")
 				}
+
+			case "Bash":
+				var params tools.BashParameters
+
+				err := json.Unmarshal([]byte(tool.Function.Arguments), &params)
+
+				if err != nil {
+					panic("Tool parameters parse error")
+				}
+
+				command := exec.Command("sh", "-c", params.Command)
+
+				stdout, err := command.Output()
+
+				if err != nil {
+					result = fmt.Sprintf("%s", err)
+				}
+
+				result = string(stdout)
 
 			default:
 				result = "error: unknown tool error " + tool.Function.Name

@@ -10,3 +10,7 @@ type WriteParameters struct {
 	FilePath string `json:"file_path"`
 	Content  string `json:"content"`
 }
+
+type BashParameters struct {
+	Command string `json:"command"`
+}
