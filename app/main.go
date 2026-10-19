@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/codecrafters-io/claude-code-starter-go/app/skills"
 	"github.com/codecrafters-io/claude-code-starter-go/app/tools"
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
@@ -44,15 +45,29 @@ func main() {
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
-	messages := []openai.ChatCompletionMessageParamUnion{
-		{
-			OfUser: &openai.ChatCompletionUserMessageParam{
-				Content: openai.ChatCompletionUserMessageParamContentUnion{
-					OfString: openai.String(prompt),
+	// Load skill
+	skillPath := ".claude/skills"
+	skillMetas := skills.LoadSkills(skillPath)
+
+	messages := []openai.ChatCompletionMessageParamUnion{}
+
+	if len(skillMetas) > 0 {
+		messages = append(messages, openai.ChatCompletionMessageParamUnion{
+			OfSystem: &openai.ChatCompletionSystemMessageParam{
+				Content: openai.ChatCompletionSystemMessageParamContentUnion{
+					OfString: openai.String(skills.ConstructSkillPrompt(skillMetas)),
 				},
 			},
-		},
+		})
 	}
+
+	messages = append(messages, openai.ChatCompletionMessageParamUnion{
+		OfUser: &openai.ChatCompletionUserMessageParam{
+			Content: openai.ChatCompletionUserMessageParamContentUnion{
+				OfString: openai.String(prompt),
+			},
+		},
+	})
 
 	for {
 		resp, err := client.Chat.Completions.New(context.Background(),
