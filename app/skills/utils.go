@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -42,10 +43,10 @@ func LoadSkills(path string) []skillMeta {
 		}
 
 		for _, entry := range entries {
-			if !entry.IsDir() {
-				byteCon, err := os.ReadFile(path + "/" + entry.Name())
+			if entry.IsDir() {
+				byteCon, err := os.ReadFile(filepath.Join(path, entry.Name(), "SKILL.md"))
 				if err != nil {
-					panic("Skill content can not be read")
+					continue
 				}
 
 				ctx := parser.NewContext()
