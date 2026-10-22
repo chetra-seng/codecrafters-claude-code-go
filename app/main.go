@@ -47,9 +47,25 @@ func main() {
 
 	// Load skill
 	skillPath := ".claude/skills"
-	skillMetas := skills.LoadSkills(skillPath)
+	invoked := false
+
+	// An explicitly invoked skill replaces the prompt with its instructions
+	if name, args, ok := skills.ParseInvocation(prompt); ok {
+		if skill, err := skills.LoadSkill(skillPath, name); err == nil {
+			invoked = true
+			prompt = skill.Body
+			if args != "" {
+				prompt += "\n\n" + args
+			}
+		}
+	}
 
 	messages := []openai.ChatCompletionMessageParamUnion{}
+
+	var skillMetas []skills.SkillMeta
+	if !invoked {
+		skillMetas = skills.LoadSkillMetas(skillPath)
+	}
 
 	if len(skillMetas) > 0 {
 		messages = append(messages, openai.ChatCompletionMessageParamUnion{
